@@ -5,7 +5,7 @@ namespace Test\Unit;
 use Garcia\Router;
 use PHPUnit\Framework\TestCase;
 
-class Test
+class FakeController
 {
     public function index()
     {
@@ -36,61 +36,122 @@ class RouterTest extends TestCase
         Router::clearRoutes();
     }
 
-    /** @test - Test if the route is added to the routes array */
-    public function addRoute()
+    public function testAddRoute(): void
     {
         Router::addRoute('GET', '/test', fn () => 'test');
 
-        $this->assertIsArray(Router::getRoutes());
         $this->assertCount(1, Router::getRoutes());
     }
 
-    /** @test - Test if the route is added to the routes array */
-    public function testGet()
+    public function testGet(): void
     {
         Router::get('/test', fn () => 'test');
 
-        $this->assertIsArray(Router::getRoutes());
-        $this->assertCount(1, Router::getRoutes());
+        $routes = Router::getRoutes();
+        $this->assertCount(1, $routes);
+        $this->assertSame('GET', $routes[0]['method']);
+        $this->assertSame('/test', $routes[0]['path']);
     }
 
-    /** @test - Test if the route is added to the routes array */
-    public function testPost()
+    public function testPost(): void
     {
         Router::post('/test', fn () => 'test');
 
-        $this->assertIsArray(Router::getRoutes());
-        $this->assertCount(1, Router::getRoutes());
+        $routes = Router::getRoutes();
+        $this->assertCount(1, $routes);
+        $this->assertSame('POST', $routes[0]['method']);
     }
 
-    /** @test - Test if the route is added to the routes array */
-    public function testPut()
+    public function testPut(): void
     {
         Router::put('/test', fn () => 'test');
 
-        $this->assertIsArray(Router::getRoutes());
+        $routes = Router::getRoutes();
+        $this->assertCount(1, $routes);
+        $this->assertSame('PUT', $routes[0]['method']);
+    }
+
+    public function testDelete(): void
+    {
+        Router::delete('/test', fn () => 'test');
+
+        $routes = Router::getRoutes();
+        $this->assertCount(1, $routes);
+        $this->assertSame('DELETE', $routes[0]['method']);
+    }
+
+    public function testPatch(): void
+    {
+        Router::patch('/test', fn () => 'test');
+
+        $routes = Router::getRoutes();
+        $this->assertCount(1, $routes);
+        $this->assertSame('PATCH', $routes[0]['method']);
+    }
+
+    public function testOptions(): void
+    {
+        Router::options('/test', fn () => 'test');
+
+        $routes = Router::getRoutes();
+        $this->assertCount(1, $routes);
+        $this->assertSame('OPTIONS', $routes[0]['method']);
+    }
+
+    public function testAnyRegistersAllMethods(): void
+    {
+        Router::any('/test', fn () => 'test');
+
+        $routes = Router::getRoutes();
+        $this->assertCount(6, $routes);
+
+        $methods = array_column($routes, 'method');
+        $this->assertContains('GET', $methods);
+        $this->assertContains('POST', $methods);
+        $this->assertContains('PUT', $methods);
+        $this->assertContains('DELETE', $methods);
+        $this->assertContains('PATCH', $methods);
+        $this->assertContains('OPTIONS', $methods);
+    }
+
+    public function testGetRouteWithArrayHandlerRegisters(): void
+    {
+        Router::get('/test', fn () => ['id' => 1, 'name' => 'John Doe']);
+
         $this->assertCount(1, Router::getRoutes());
     }
 
-    /** @test - test the json response from the router */
-    public function testJsonResponse()
+    public function testAddResource(): void
     {
-        Router::get('/test', fn () => ['id' => 1, 'name' => 'John Doe', 'email' => '', 'phone' => '']);
+        Router::resource('/tests', FakeController::class);
 
-        $this->assertIsArray(Router::getRoutes());
-        $this->assertCount(1, Router::getRoutes());
-    }
-
-    /** @test - Test if the route is added to the routes array */
-    public function addResource()
-    {
-        Router::resource('/tests', Test::class);
-        $this->assertIsArray(Router::getRoutes());
         $this->assertCount(6, Router::getRoutes());
     }
 
-    /** @test - error.php must HTML-encode the $message variable */
-    public function testErrorViewEscapesXss()
+    public function testRouteParameterExtraction(): void
+    {
+        Router::get('/users/:id', fn ($params) => ['id' => $params['id']]);
+
+        ob_start();
+        Router::handleRequest('GET', '/users/42');
+        $output = ob_get_clean();
+
+        $this->assertSame('{"id":"42"}', $output);
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testHandleRequestNotFoundReturns404(): void
+    {
+        ob_start();
+        Router::handleRequest('GET', '/nonexistent');
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString('IMPORTANT:', $output);
+    }
+
+    public function testErrorViewEscapesXss(): void
     {
         $message = '<script>alert("xss")</script>';
         ob_start();
@@ -101,8 +162,7 @@ class RouterTest extends TestCase
         $this->assertStringContainsString('&lt;script&gt;', $output);
     }
 
-    /** @test - template.php must HTML-encode the $name variable */
-    public function testTemplateViewEscapesXss()
+    public function testTemplateViewEscapesXss(): void
     {
         $name = '<script>alert("xss")</script>';
         ob_start();
@@ -113,8 +173,7 @@ class RouterTest extends TestCase
         $this->assertStringContainsString('&lt;script&gt;', $output);
     }
 
-    /** @test - views must encode double quotes to prevent attribute injection (validates ENT_QUOTES) */
-    public function testViewsEscapeQuotes()
+    public function testViewsEscapeQuotes(): void
     {
         $payload = '" onmouseover="alert(1)"';
 
@@ -130,8 +189,7 @@ class RouterTest extends TestCase
         $this->assertStringContainsString('&quot;', $templateOutput);
     }
 
-    /** @test - views must handle empty string input without errors */
-    public function testViewsHandleEmptyStrings()
+    public function testViewsHandleEmptyStrings(): void
     {
         ob_start();
         view('error', ['message' => ''], __DIR__ . '/../../src/Garcia/views');
@@ -145,8 +203,7 @@ class RouterTest extends TestCase
         $this->assertStringContainsString('Hello, !', $templateOutput);
     }
 
-    /** @test - views must handle null input safely by rendering an empty string */
-    public function testViewsHandleNullSafely()
+    public function testViewsHandleNullSafely(): void
     {
         ob_start();
         view('error', ['message' => null], __DIR__ . '/../../src/Garcia/views');
@@ -160,7 +217,6 @@ class RouterTest extends TestCase
         $this->assertStringContainsString('Hello, !', $templateOutput);
     }
 
-    /** @test - Test if clearRoutes empties the route array */
     public function testClearRoutesEmptiesRouteArray(): void
     {
         Router::get('/a', fn () => 'a');
@@ -220,4 +276,4 @@ class RouterTest extends TestCase
 
         $this->assertSame('{"status":"ok"}', $output);
     }
- }
+}
