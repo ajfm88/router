@@ -1,0 +1,10 @@
+vendor/
+.git/
+.idea/
+.php-cs-fixer.cache
+.dockerignore
+Dockerfile
+docker-compose.yml
+*.md
+.gitignore
+.gitattributes

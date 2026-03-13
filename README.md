@@ -107,9 +107,43 @@ You can run the tests with the following command:
 composer test
 ```
 
+## Docker Development
+
+The Docker setup uses **PHP 8.4 CLI**. No local PHP installation is required.
+The environment variable `PHP_CS_FIXER_IGNORE_ENV=1` is set because php-cs-fixer may not yet officially support PHP 8.4.
+
+Build the image:
+```bash
+docker compose build
+```
+
+Install dependencies:
+```bash
+docker compose run --rm app composer install
+```
+
+Run tests:
+```bash
+docker compose run --rm app composer test
+```
+
+Lint:
+```bash
+docker compose run --rm app composer lint
+```
+
+Fix code style:
+```bash
+docker compose run --rm app composer fix
+```
+
+Open an interactive shell:
+```bash
+docker compose run --rm app bash
+```
+
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
 ## License
 [MIT](LICENSE)
-```
