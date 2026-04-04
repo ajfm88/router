@@ -143,6 +143,26 @@ class HelpersTest extends TestCase
         }
     }
 
+    public function testViewElementCannotOverwriteInternalPath(): void
+    {
+        $tmpDir   = sys_get_temp_dir();
+        $viewFile = $tmpDir . DIRECTORY_SEPARATOR . 'test_safe_view_' . uniqid() . '.php';
+        file_put_contents($viewFile, '<?php echo "safe"; ?>');
+
+        $viewName = basename($viewFile, '.php');
+
+        ob_start();
+        try {
+            // Attempt to overwrite $__viewPath via extract(); EXTR_SKIP must prevent this.
+            view($viewName, ['__viewPath' => '/etc/passwd'], $tmpDir);
+        } finally {
+            $output = ob_get_clean();
+            @unlink($viewFile);
+        }
+
+        $this->assertSame('safe', $output);
+    }
+
     public function testViewRejectsNonexistentBaseDirectory(): void
     {
         $this->expectException(\InvalidArgumentException::class);

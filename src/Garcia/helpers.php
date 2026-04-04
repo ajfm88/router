@@ -55,10 +55,10 @@ function view(string $string, $element, string $path = __DIR__ . '/views')
         throw new \InvalidArgumentException('Invalid view: resolved path is outside the allowed views directory.');
     }
 
-    // Capture the validated path before extract() so that a crafted $element key
-    // (e.g. ['resolvedPath' => '/etc/passwd']) cannot overwrite it.
+    // Capture the validated path and use EXTR_SKIP so that a crafted $element key
+    // (e.g. ['__viewPath' => '/etc/passwd']) cannot overwrite it.
     $__viewPath = $resolvedPath;
     $array = is_array($element) ? $element : json_decode(json_encode($element), true);
-    extract($array);
+    extract($array, EXTR_SKIP);
     include $__viewPath;
 }
