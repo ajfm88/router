@@ -118,11 +118,13 @@ class HelpersTest extends TestCase
             $this->markTestSkipped('Symlink creation requires elevated privileges on Windows.');
         }
 
-        $tmpDir    = sys_get_temp_dir();
-        $viewsDir  = $tmpDir . DIRECTORY_SEPARATOR . 'test_views_symlink_' . uniqid();
-        mkdir($viewsDir);
+        $base      = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'test_symlink_' . uniqid();
+        $viewsDir  = $base . DIRECTORY_SEPARATOR . 'views';
+        $siblingDir = $base . DIRECTORY_SEPARATOR . 'sibling';
+        mkdir($viewsDir, 0777, true);
+        mkdir($siblingDir, 0777, true);
 
-        $outsideFile = $tmpDir . DIRECTORY_SEPARATOR . 'outside_secret_' . uniqid() . '.php';
+        $outsideFile = $siblingDir . DIRECTORY_SEPARATOR . 'secret.php';
         file_put_contents($outsideFile, '<?php echo "secret"; ?>');
 
         $symlinkPath = $viewsDir . DIRECTORY_SEPARATOR . 'escaped_view.php';
@@ -135,7 +137,9 @@ class HelpersTest extends TestCase
         } finally {
             @unlink($symlinkPath);
             @unlink($outsideFile);
+            @rmdir($siblingDir);
             @rmdir($viewsDir);
+            @rmdir($base);
         }
     }
 
@@ -152,15 +156,14 @@ class HelpersTest extends TestCase
         ob_start();
         try {
             view($viewName, [], $tmpDir);
+            $output = ob_get_clean();
+            $this->assertSame('hello-view', $output);
         } catch (\InvalidArgumentException $e) {
             ob_end_clean();
-            @unlink($viewFile);
             $this->fail('view() should not reject a valid view path: ' . $e->getMessage());
+        } finally {
+            @unlink($viewFile);
         }
-        $output = ob_get_clean();
-        @unlink($viewFile);
-
-        $this->assertSame('hello-view', $output);
     }
 
     public function testViewRendersSubdirectoryView(): void
@@ -176,18 +179,15 @@ class HelpersTest extends TestCase
         ob_start();
         try {
             view('admin/dashboard', [], $viewsDir);
+            $output = ob_get_clean();
+            $this->assertSame('admin-dashboard', $output);
         } catch (\InvalidArgumentException $e) {
             ob_end_clean();
+            $this->fail('view() should allow subdirectory views: ' . $e->getMessage());
+        } finally {
             @unlink($viewFile);
             @rmdir($subDir);
             @rmdir($viewsDir);
-            $this->fail('view() should allow subdirectory views: ' . $e->getMessage());
         }
-        $output = ob_get_clean();
-        @unlink($viewFile);
-        @rmdir($subDir);
-        @rmdir($viewsDir);
-
-        $this->assertSame('admin-dashboard', $output);
     }
 }

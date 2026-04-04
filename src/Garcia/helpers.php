@@ -28,7 +28,7 @@ function redirect(string $path)
  * @param string $path - Path to the views directory
  * @return void
  */
-function view(string $string, $element, string $path = 'views')
+function view(string $string, $element, string $path = __DIR__ . '/views')
 {
     if (strpos($string, "\0") !== false) {
         throw new \InvalidArgumentException('Invalid view name: null bytes are not allowed.');
@@ -47,7 +47,7 @@ function view(string $string, $element, string $path = 'views')
 
     $resolvedPath = realpath($resolvedBase . DIRECTORY_SEPARATOR . $string . '.php');
     if ($resolvedPath === false) {
-        throw new \InvalidArgumentException("View not found: {$string}");
+        throw new \InvalidArgumentException('View not found.');
     }
     if (strpos($resolvedPath, $resolvedBase . DIRECTORY_SEPARATOR) !== 0) {
         throw new \InvalidArgumentException('Invalid view: resolved path is outside the allowed views directory.');
