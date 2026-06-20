@@ -51,6 +51,10 @@ class Router
      */
     public static function resource(string $path, string $className)
     {
+        if (!class_exists($className)) {
+            throw new \InvalidArgumentException("Resource controller class '{$className}' does not exist.");
+        }
+
         self::addRoute('GET', $path, fn () => (new $className())->index());
         self::addRoute('POST', $path, fn ($params) => (new $className())->store($params));
         self::addRoute('GET', "$path/:id", fn ($params) => (new $className())->show($params));

@@ -163,6 +163,13 @@ class RouterTest extends TestCase
         $this->assertCount(6, Router::getRoutes());
     }
 
+    public function testResourceThrowsForNonexistentClass(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessageMatches('/NonExistentController/');
+        Router::resource('/things', 'NonExistentController');
+    }
+
     public function testRouteParameterExtraction(): void
     {
         Router::get('/users/:id', fn ($params) => ['id' => $params['id']]);
