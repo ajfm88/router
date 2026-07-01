@@ -38,15 +38,17 @@ jobs:
           done
 
           for fn in $HELPER_FUNCTIONS; do
-            if ! grep -qE "^function ${fn}\b" src/Garcia/helpers.php; then
-              echo "FAIL: helper '${fn}' is documented but not found in helpers.php"
+            if ! grep -qE "public (static )?function ${fn}\b" src/Garcia/Helpers.php; then
+              echo "FAIL: helper '${fn}' is documented but not found in Helpers.php"
               FAILED=1
             fi
           done
 
-          # Detect methods documented under ### headings that don't exist in source
-          grep -oP '(?<=^### )[\w, ]+' README.md | tr ', ' '\n' | grep -v '^$' | sort -u | while read -r name; do
-            if grep -qE "^function ${name}\b" src/Garcia/helpers.php; then
+          # Detect methods documented under ### headings that don't exist in source.
+          # Excludes the prose "Deprecated global functions" heading, which isn't a method name list.
+          grep -oP '(?<=^### )[\w, :]+' README.md | grep -v '^Deprecated global functions$' | tr ', ' '\n' | grep -v '^$' | sort -u | while read -r name; do
+            name="${name#Helpers::}"
+            if grep -qE "public (static )?function ${name}\b" src/Garcia/Helpers.php; then
               continue
             fi
             if grep -qE "public (static )?function ${name}\b" src/Garcia/Router.php; then
