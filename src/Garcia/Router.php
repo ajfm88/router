@@ -17,7 +17,7 @@ class Router
      * @param string $method - HTTP method
      * @param string $path - URL path
      * @param callable $handler - Route handler
-     * @return void
+     * @return static
      */
     public static function addRoute(string $method, string $path, callable $handler)
     {
@@ -27,6 +27,8 @@ class Router
             'handler' => $handler,
             'middleware' => []
         ];
+
+        return new static();
     }
 
     public function middleware(callable $middleware)
