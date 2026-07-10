@@ -78,6 +78,13 @@ class RouterTest extends TestCase
         $this->assertCount(1, Router::getRoutes());
     }
 
+    public function testAddRouteReturnsInstanceForChaining(): void
+    {
+        $result = Router::addRoute('GET', '/test', fn () => 'test');
+
+        $this->assertInstanceOf(Router::class, $result);
+    }
+
     public function testGet(): void
     {
         Router::get('/test', fn () => 'test');
@@ -923,5 +930,32 @@ class RouterTest extends TestCase
         ob_get_clean();
 
         $this->assertSame([], $calls, 'Middleware for /second must not fire on a /first request');
+    }
+
+    public function testMiddlewareChainsDirectlyOffAddRoute(): void
+    {
+        $calls = [];
+
+        Router::addRoute('GET', '/first', fn () => 'first');
+
+        Router::addRoute('GET', '/secure', fn () => 'secure')
+            ->middleware(function () use (&$calls) {
+                $calls[] = 'mw-secure';
+            });
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI']    = '/first';
+        ob_start();
+        Router::run();
+        ob_get_clean();
+
+        $this->assertSame([], $calls, 'Middleware chained off addRoute() must not fire for a different route');
+
+        $_SERVER['REQUEST_URI'] = '/secure';
+        ob_start();
+        Router::run();
+        ob_get_clean();
+
+        $this->assertSame(['mw-secure'], $calls, 'Middleware chained off addRoute() must fire for its own route');
     }
 }

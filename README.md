@@ -95,6 +95,16 @@ These methods are used to define routes. They take two parameters: the route and
 
 This method is used to define routes. It takes three parameters: the method, the route, and the handler. The route can contain parameters, which are defined by a colon followed by the parameter name. The handler can be a function or a string. If it is a string, it is assumed to be the name of a function to be called.
 
+Like the other route-registration methods, it returns the router instance so it can be chained directly into `middleware()`:
+
+```php
+Router::addRoute('GET', '/admin', fn () => 'Admin area')->middleware(function () {
+    if (!isset($_SESSION['user'])) {
+        Helpers::redirect('/login');
+    }
+});
+```
+
 ### run
 
 This method is used to run the router. It takes no parameters.
